@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 //brandshop
 //jJSVYoyYnUqBeUNq
@@ -31,14 +31,59 @@ async function run() {
         await client.connect();
 
 
-        const coffeeCollection = client.db('carsDB').collection('car');
+        const carCollection = client.db('carsDB').collection('car');
+        const branCollection = client.db('brandDB').collection('brands');
+
+        app.post('/brand', async (req, res) => {
+            const newbrand = req.body;
+            console.log(newbrand);
+            const result = await branCollection.insertOne(newbrand);
+            res.send(result);
+        })
+        app.get('/brand',async(req,res)=>{
+            const cursor = branCollection.find();
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+
+        app.get('/cars',async(req,res)=>{
+            const cursor = carCollection.find();
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+        app.get('/cars/:id',async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id) }
+            const result = await carCollection.findOne(query);
+            res.send(result)
+        })
+        app.put('/cars/:id',async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id) }
+            const option = {upsert: true};
+            const updatedCars = req.body
+            const cars = {
+                $set: {
+                    name: updatedCars.name,
+                    brandname: updatedCars.brandname,
+                    category: updatedCars.category,
+                    price: updatedCars.price,
+                    photo: updatedCars.photo
+                }
+            }
+            const result = await carCollection.updateOne(query,cars,option)
+            res.send(result)
+            
+        })
+        
 
         app.post('/cars', async (req, res) => {
             const newCars = req.body;
             console.log(newCars);
-            const result = await coffeeCollection.insertOne(newCars);
+            const result = await carCollection.insertOne(newCars);
             res.send(result);
         })
+        
 
 
         // Send a ping to confirm a successful connection
